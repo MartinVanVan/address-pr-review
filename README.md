@@ -24,6 +24,7 @@ Open a PR and invoke `/address-pr-review` in Claude Code (or `$address-pr-review
 - Fixes CI failures
 - Reads inline pull request comments — ignores resolved ones, and ones you already replied to
 - Re-checks a thread you replied to when you react 👀 to it
+- **Judges each suggestion before implementing it** — a bot asking is not a reason to change code
 - Makes code changes
 - Reports what it changed and the exact replies it proposes — and waits for your go-ahead
 - Replies in the language the thread is written in (a German thread gets a German reply)
@@ -89,6 +90,30 @@ instead — the agent posts the approved text as-is, it does not re-word it.
 Replies, resolutions and pushes go out **as your own GitHub account** — `gh`'s
 authenticated user. There is no bot identity, so a reply is indistinguishable from one you
 typed yourself. That is also why the skill asks first.
+
+## Suggestions are judged, not obeyed
+
+The point of failure for a skill like this is not a bad reply — it is quietly implementing
+every suggestion a bot makes. CodeRabbit and friends emit correct findings, style
+opinions and confident misreadings in the same voice, and an agent that treats each one as
+a work order will happily degrade the code on request.
+
+So the burden of proof sits on the suggestion. Each thread gets a verdict, shown to you at
+the confirmation gate with a one-sentence reason:
+
+| Verdict | What happens |
+|---|---|
+| correct, worth doing | change is made |
+| correct but trivial | fixed only if a genuine one-liner, otherwise declined |
+| wrong | declined, with what the reviewer misread |
+| out of scope | declined — real, but not something this PR introduced |
+| unclear | you are asked, rather than the agent guessing |
+
+A run that declines several threads is working correctly. If it never declines anything,
+be suspicious of it.
+
+CI failures are exempt: a failing job is a fact, not a claim. The rule there is to fix the
+cause — never to green a job by weakening an assertion, skipping a test or loosening a type.
 
 ## Reply language
 
