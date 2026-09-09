@@ -39,7 +39,11 @@ The first returns a JSON array of the unresolved threads that need your attentio
 The script already applies the selection rules (see [The 👀 re-check flag](#the--re-check-flag)).
 Do not pass `--include-mine` unless the user explicitly asks for the full list.
 
-The second checks CI status and outputs failure details if any jobs failed (exit code 1 = failures, 0 = all passed).
+The second checks CI status. Its exit code is the contract:
+
+- `0` — nothing failing. Read the message: it says whether checks are **still running**, in which case the status is not final.
+- `1` — at least one check failed; failure details and logs follow.
+- `2` — the status could **not** be determined (no PR, auth or API problem). This is not a green run — report it as unknown and do not conclude CI is fine.
 
 If there are no threads to work on and CI is green, stop here and say so.
 

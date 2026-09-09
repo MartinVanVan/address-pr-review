@@ -149,5 +149,6 @@ bash ./get-unresolved-threads.sh --include-mine
 
 ## Limitations
 
-- CI failure extraction is designed for GitHub Actions — other CI systems may not work
-- Threads and comments are fetched with a hard cap of 100 each, without pagination
+- Job logs are only fetched for GitHub Actions check runs; other providers are listed with a link to their own UI
+- CI status comes from the REST check-runs endpoint, so legacy commit statuses (older external CI that posts statuses rather than check runs) are not seen
+- No pagination: at most 100 threads per PR, 50 comments per thread, 20 👀 reactions per comment. These sizes are capped by GitHub's 500,000-node query budget (100 × 50 × 20 = 100,000) — raising them can make the query fail on *every* PR

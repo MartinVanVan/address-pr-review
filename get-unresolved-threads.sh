@@ -13,6 +13,11 @@
 #
 # Pass --include-mine to get every unresolved thread regardless of the above.
 #
+# Connection sizes are deliberate: GitHub statically evaluates the query's node budget as
+# threads x comments x reactions and rejects anything over 500,000. 100 x 50 x 20 = 100,000.
+# Raising any of the three can push the query over the cap, at which point it fails on
+# EVERY pull request, not just large ones.
+#
 # Each thread gains two computed fields:
 #   repliedByViewer — you have commented in it
 #   flaggedByEyes   — you reacted 👀 to it and want it re-checked
@@ -36,13 +41,13 @@ QUERY='query($owner: String!, $repo: String!, $pr: Int!) {
           path
           line
           startLine
-          comments(first: 100) {
+          comments(first: 50) {
             nodes {
               id
               author { login }
               body
               url
-              reactions(first: 100, content: EYES) {
+              reactions(first: 20, content: EYES) {
                 nodes { user { login } }
               }
             }
