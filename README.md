@@ -115,6 +115,24 @@ be suspicious of it.
 CI failures are exempt: a failing job is a fact, not a claim. The rule there is to fix the
 cause — never to green a job by weakening an assertion, skipping a test or loosening a type.
 
+## CodeRabbit threads are never auto-resolved
+
+CodeRabbit resolves its own threads once it has verified a fix — on every venabo PR
+checked, its threads carry `resolvedBy: coderabbitai[bot]`. So the skill does not resolve
+them. Closing one ourselves pre-empts that verification and discards the only independent
+confirmation that the change actually answers the comment.
+
+Instead a CodeRabbit thread gets two separate replies: the substantive one for whoever
+reads the PR later, and a short follow-up addressed to `@coderabbitai` asking it to look
+again. The thread stays open until CodeRabbit itself closes it.
+
+```bash
+bash ./reply-to-thread.sh "<thread_id>" "Fixed as suggested." --ask-recheck
+```
+
+`--resolve` on a CodeRabbit thread is refused (exit 65); `--force-resolve` overrides it if
+you really mean to. Human threads are unaffected and resolve as before.
+
 ## Reply language
 
 Replies match the language the thread is conducted in — a German thread gets a German

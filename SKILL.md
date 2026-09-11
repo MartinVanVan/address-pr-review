@@ -35,6 +35,7 @@ The first returns a JSON array of the unresolved threads that need your attentio
 - `comments.nodes[]` — the comment thread (first = original comment, rest = replies), each with `id`, `author.login`, `body`, and `url`
 - `repliedByViewer` — the user has commented in this thread
 - `flaggedByEyes` — the user reacted 👀 and wants this thread re-checked
+- `isCodeRabbit` — opened by CodeRabbit; never resolve these yourself (see [CodeRabbit threads](#coderabbit-threads))
 
 The script already applies the selection rules (see [The 👀 re-check flag](#the--re-check-flag)).
 Do not pass `--include-mine` unless the user explicitly asks for the full list.
@@ -61,6 +62,33 @@ Treat a flagged thread as **"look at this again"**, not as a fresh comment:
 The flag is **one-shot**: once the thread is dealt with, pass `--clear-eyes` in Step 4 so
 the reaction is removed and the thread is not picked up again on the next run. Only the
 user's own 👀 counts — bot reactions are ignored by the script.
+
+## CodeRabbit threads
+
+A thread with `isCodeRabbit: true` is handled differently: **reply, never resolve.**
+
+CodeRabbit resolves its own threads once it has verified the fix — on every venabo PR
+checked, those threads carry `resolvedBy: coderabbitai[bot]`. Resolving one ourselves
+pre-empts that and throws away the only independent confirmation that the change actually
+answers the comment. A thread left open is cheap; a thread closed over an unverified fix
+is how a real finding disappears.
+
+So for a CodeRabbit thread, post **two separate replies**:
+
+1. the substantive reply, written for whoever reads the PR later
+2. a short follow-up addressed to `@coderabbitai`, asking it to look again
+
+They stay separate on purpose. The first is a human explanation, the second is a bot
+instruction, and merging them produces a reply that serves neither. `reply-to-thread.sh`
+does both in one call — pass `--ask-recheck` and it posts the ping as its own comment.
+
+The ping is addressed to a bot, so it is **exempt from the reply-language rule**: keep it
+in English even when the thread is in German. The substantive reply still follows the
+thread's language.
+
+`--resolve` on a CodeRabbit thread is refused by the script (exit 65). Do not reach for
+`--force-resolve` to get around it — if you think a CodeRabbit thread genuinely needs
+resolving by hand, that is a decision for the user at the Step 3 gate.
 
 ## Step 2: Judge each suggestion, then act
 
@@ -127,7 +155,7 @@ Verdict:  correct | trivial | wrong | out of scope | unclear — <the one-senten
 Action:   <what you changed — files/lines — or "no change">
 Reply:
   > <the reply body, verbatim, exactly as it would be posted>
-Resolve:  yes | no          Clear 👀: yes | no
+Resolve:  yes | no          Clear 👀: yes | no          Recheck ping: yes | no
 ```
 
 Rules for this report:
@@ -163,13 +191,14 @@ Only once the user has confirmed:
 2. Reply to each approved thread:
 
 ```bash
-bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>" [--resolve] [--clear-eyes]
+bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>" [--resolve] [--ask-recheck] [--clear-eyes]
 ```
 
 - **Send exactly the `<body>` shown in Step 3** — the approved text, not a re-worded version of it. If the user edited a reply, send their wording.
 - Keep the drafts short, so there is little to review: if the code was fixed as mentioned in the thread, "Fixed as suggested." is enough.
 - If no change was applied, briefly explain why and keep the thread unresolved (omit `--resolve`) so the reviewer can reply if they disagree.
 - Pass `--resolve` only where Step 3 said `Resolve: yes`, and `--clear-eyes` only where it said `Clear 👀: yes`.
+- On a CodeRabbit thread (`isCodeRabbit: true`): pass `--ask-recheck`, never `--resolve`. Leave the thread open for CodeRabbit to verify and close.
 
 Replies and resolutions are posted **as the user's own GitHub account**, not as a bot.
 Write them in a voice the user would be comfortable having attributed to them.

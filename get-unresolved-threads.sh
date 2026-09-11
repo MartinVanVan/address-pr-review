@@ -18,9 +18,10 @@
 # Raising any of the three can push the query over the cap, at which point it fails on
 # EVERY pull request, not just large ones.
 #
-# Each thread gains two computed fields:
+# Each thread gains three computed fields:
 #   repliedByViewer — you have commented in it
 #   flaggedByEyes   — you reacted 👀 to it and want it re-checked
+#   isCodeRabbit    — opened by CodeRabbit, so it must NOT be resolved by us
 set -euo pipefail
 
 INCLUDE_MINE="${1:-}"
@@ -69,7 +70,8 @@ JQ=".data.viewer.login as \$me
         | select(.isResolved == false)
         | . + {
             repliedByViewer: ([.comments.nodes[].author.login] | index(\$me) != null),
-            flaggedByEyes:   ([.comments.nodes[].reactions.nodes[].user.login] | index(\$me) != null)
+            flaggedByEyes:   ([.comments.nodes[].reactions.nodes[].user.login] | index(\$me) != null),
+            isCodeRabbit:    ((.comments.nodes[0].author.login // \"\") | ascii_downcase | test(\"^coderabbitai(\\\\[bot\\\\])?\$\"))
           }
         | $SELECT ]"
 
