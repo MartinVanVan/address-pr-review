@@ -75,22 +75,33 @@ is how a real finding disappears.
 
 So for a CodeRabbit thread, post **two separate replies**:
 
-1. the substantive reply, written for whoever reads the PR later
+1. the substantive reply — a normal, human explanation of what was changed and what was not
 2. a short follow-up addressed to `@coderabbitai`, asking it to look again
 
-They stay separate on purpose. The first is a human explanation, the second is a bot
+They stay separate on purpose. The first is an explanation, the second is a bot
 instruction, and merging them produces a reply that serves neither. `reply-to-thread.sh`
 does both in one call — pass `--ask-recheck` and it posts the ping as its own comment.
 
-The ping is addressed to a bot, so it is **exempt from the reply-language rule**: keep it
-in English even when the thread is in German. The substantive reply still follows the
-thread's language.
+**Write the substantive reply out properly, even here — especially here.** "Fixed as
+suggested." is enough for a human reviewer who can read the diff, but CodeRabbit is about
+to re-examine this thread and decide whether to resolve it. Tell it what actually changed,
+where, and what you deliberately left alone and why. A vague reply gets a vague re-check:
+the bot either re-raises a point you already answered, or resolves something you never
+addressed.
+
+Both replies follow the thread's language — see [Reply language](#reply-language). The ping
+is no exception: CodeRabbit's language is a deliberate project setting, and in this project
+it is German, so the ping is German too.
 
 Ping on **every** CodeRabbit thread you reply to, whether you implemented the suggestion or
 declined it. Nobody else closes CodeRabbit's threads, so a decline with no ping sits open
 forever. This is why the default ping text is neutral — it must stay true for a thread
-where you changed nothing. If you write your own ping text with `--ask-recheck=...`, keep
-that property: never claim a fix you did not make.
+where you changed nothing. Keep that property in any text you write yourself: never claim a
+fix you did not make.
+
+**Always pass the ping text explicitly** — `--ask-recheck='<text>'` — in the thread's
+language. Bare `--ask-recheck` falls back to a built-in English default, which is wrong for
+a German thread; the script warns when you rely on it.
 
 **The ping goes in the thread. Never post a top-level PR comment.** `@coderabbitai review`
 at PR level triggers a whole fresh review pass — slower, noisier, and untethered from the
@@ -206,10 +217,11 @@ bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>
 ```
 
 - **Send exactly the `<body>` shown in Step 3** — the approved text, not a re-worded version of it. If the user edited a reply, send their wording.
-- Keep the drafts short, so there is little to review: if the code was fixed as mentioned in the thread, "Fixed as suggested." is enough.
+- Keep drafts for **human** threads short, so there is little to review: if the code was fixed as mentioned in the thread, "Fixed as suggested." is enough.
+- On a **CodeRabbit** thread, write the reply out: what changed, where, and what you left alone and why. It is the input to the bot's re-check, not just a courtesy.
 - If no change was applied, briefly explain why and keep the thread unresolved (omit `--resolve`) so the reviewer can reply if they disagree.
 - Pass `--resolve` only where Step 3 said `Resolve: yes`, and `--clear-eyes` only where it said `Clear 👀: yes`.
-- On a CodeRabbit thread (`isCodeRabbit: true`): pass `--ask-recheck`, never `--resolve`. Leave the thread open for CodeRabbit to verify and close.
+- On a CodeRabbit thread (`isCodeRabbit: true`): pass `--ask-recheck='<text in the thread's language>'`, never `--resolve`. Leave the thread open for CodeRabbit to verify and close.
 
 Replies and resolutions are posted **as the user's own GitHub account**, not as a bot.
 Write them in a voice the user would be comfortable having attributed to them.
@@ -223,10 +235,16 @@ Pick the language from, in order of priority:
 
 1. the user's own comment in the thread, if there is one — the reply goes out under their name, so it should read as a continuation of what they already wrote there
 2. the most recent comment by a human reviewer
-3. the original comment
+3. **the language the thread started in** — the original comment
 
-Bot comments (CodeRabbit and friends) are almost always English and are the **weakest**
-signal — do not let an English bot comment override a German discussion between humans.
+Point 3 includes CodeRabbit's own opening comment. Do not treat a bot's language as an
+accident to be corrected: it is configured per project, and in this project CodeRabbit is
+set to **German**. A German CodeRabbit thread gets German replies, including the
+`@coderabbitai` ping.
+
+The one thing point 1 and 2 are there to prevent is a mixed thread flipping language
+mid-way: if the humans in the thread are writing in another language than it opened in,
+follow the humans.
 
 Leave untranslated: code identifiers, file paths, translation keys, commit SHAs, quoted
 code and log output, and CLI flags.

@@ -9,6 +9,9 @@
 #   --ask-recheck[=TEXT] post a SECOND, separate reply addressed to @coderabbitai asking
 #                        it to look again. Kept separate from <body> on purpose: the first
 #                        reply is for the human reader, this one is a bot instruction.
+#                        PASS TEXT in the thread's language. CodeRabbit's language is a
+#                        per-project setting, so the built-in default (English) is only a
+#                        fallback and is wrong wherever the bot is configured otherwise.
 #   --clear-eyes         remove YOUR 👀 (EYES) reactions from the thread's comments, so the
 #                        re-check flag is consumed and the thread is not picked up again by
 #                        the next run of get-unresolved-threads.sh
@@ -24,7 +27,8 @@ set -euo pipefail
 # resolvedBy.login — match both.
 CODERABBIT_RE='^coderabbitai(\[bot\])?$'
 # Deliberately neutral: this same ping is sent whether the suggestion was implemented or
-# declined, so it must not assert that a change was made.
+# declined, so it must not assert that a change was made. English only as a fallback —
+# callers should pass --ask-recheck=TEXT in the thread's language.
 DEFAULT_RECHECK='@coderabbitai please take another look at this thread and resolve it if the point is settled.'
 
 if [ $# -lt 2 ]; then
@@ -40,13 +44,14 @@ RESOLVE=false
 FORCE_RESOLVE=false
 CLEAR_EYES=false
 ASK_RECHECK=false
+RECHECK_DEFAULTED=false
 RECHECK_TEXT="$DEFAULT_RECHECK"
 for ARG in "$@"; do
   case "$ARG" in
     --resolve)        RESOLVE=true ;;
     --force-resolve)  RESOLVE=true; FORCE_RESOLVE=true ;;
     --clear-eyes)     CLEAR_EYES=true ;;
-    --ask-recheck)    ASK_RECHECK=true ;;
+    --ask-recheck)    ASK_RECHECK=true; RECHECK_DEFAULTED=true ;;
     --ask-recheck=*)  ASK_RECHECK=true; RECHECK_TEXT="${ARG#--ask-recheck=}" ;;
     *) echo "unknown option: $ARG" >&2; exit 64 ;;
   esac
@@ -95,6 +100,9 @@ gh api graphql -f query="$REPLY_QUERY" -f threadId="$THREAD_ID" -f body="$BODY" 
   --jq '.data.addPullRequestReviewThreadReply.comment.url'
 
 if [ "$ASK_RECHECK" = true ]; then
+  if [ "$RECHECK_DEFAULTED" = true ]; then
+    echo "note: using the built-in English ping — pass --ask-recheck=TEXT in the thread's language" >&2
+  fi
   gh api graphql -f query="$REPLY_QUERY" -f threadId="$THREAD_ID" -f body="$RECHECK_TEXT" \
     --jq '"recheck ping: " + .data.addPullRequestReviewThreadReply.comment.url'
 fi

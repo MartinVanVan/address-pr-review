@@ -122,13 +122,25 @@ checked, its threads carry `resolvedBy: coderabbitai[bot]`. So the skill does no
 them. Closing one ourselves pre-empts that verification and discards the only independent
 confirmation that the change actually answers the comment.
 
-Instead a CodeRabbit thread gets two separate replies: the substantive one for whoever
-reads the PR later, and a short follow-up addressed to `@coderabbitai` asking it to look
-again. The thread stays open until CodeRabbit itself closes it.
+Instead a CodeRabbit thread gets two separate replies: a normal, written-out explanation of
+what changed and what did not, and a short follow-up addressed to `@coderabbitai` asking it
+to look again. The thread stays open until CodeRabbit itself closes it.
+
+The explanation matters more here than on a human thread. "Fixed as suggested." is fine for
+a reviewer who can read the diff; CodeRabbit is about to decide whether to resolve the
+thread, and a vague reply gets a vague re-check — it re-raises a point you answered, or
+resolves one you never did.
+
+Both replies go out in the thread's language, the ping included. CodeRabbit's language is a
+per-project setting rather than an accident, so a German thread gets German replies:
 
 ```bash
-bash ./reply-to-thread.sh "<thread_id>" "Fixed as suggested." --ask-recheck
+bash ./reply-to-thread.sh "<thread_id>" \
+  "Behoben in src/Foo.php:42 — die Null-Prüfung entfernt. Punkt zwei bleibt, weil ..." \
+  --ask-recheck='@coderabbitai Bitte schau dir den Thread noch einmal an und löse ihn auf, wenn der Punkt erledigt ist.'
 ```
+
+Bare `--ask-recheck` falls back to a built-in English ping and warns that it did.
 
 Every CodeRabbit thread gets the ping, including ones where the suggestion was declined —
 nothing else closes them, so a decline with no ping stays open indefinitely. The default
@@ -147,8 +159,9 @@ you really mean to. Human threads are unaffected and resolve as before.
 Replies match the language the thread is conducted in — a German thread gets a German
 reply, an English one an English reply. The language is taken from your own comment in the
 thread if you left one, otherwise from the most recent human reviewer, otherwise from the
-original comment. Bot comments are the weakest signal, so an English CodeRabbit comment
-does not drag a German discussion into English.
+language the thread opened in. That last one includes CodeRabbit's own comment: its
+language is configured per project, not an accident to be corrected. The human signals rank
+higher only so a thread that has switched language mid-way follows the people in it.
 
 Code identifiers, file paths, translation keys, quoted code and log output are left
 untranslated.
