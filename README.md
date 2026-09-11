@@ -130,6 +130,15 @@ again. The thread stays open until CodeRabbit itself closes it.
 bash ./reply-to-thread.sh "<thread_id>" "Fixed as suggested." --ask-recheck
 ```
 
+Every CodeRabbit thread gets the ping, including ones where the suggestion was declined —
+nothing else closes them, so a decline with no ping stays open indefinitely. The default
+ping text is neutral for that reason: it is sent whether or not a change was made, so it
+never claims a fix.
+
+The ping always goes in the thread. The skill never posts a top-level PR comment: a
+PR-level `@coderabbitai review` would trigger a full fresh pass, detached from the thread
+it was meant to answer.
+
 `--resolve` on a CodeRabbit thread is refused (exit 65); `--force-resolve` overrides it if
 you really mean to. Human threads are unaffected and resolve as before.
 

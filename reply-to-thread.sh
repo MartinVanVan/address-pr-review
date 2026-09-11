@@ -23,7 +23,9 @@ set -euo pipefail
 # CodeRabbit appears as "coderabbitai" in author.login and "coderabbitai[bot]" in
 # resolvedBy.login — match both.
 CODERABBIT_RE='^coderabbitai(\[bot\])?$'
-DEFAULT_RECHECK='@coderabbitai I have addressed this — please take another look and resolve the thread if it is fixed.'
+# Deliberately neutral: this same ping is sent whether the suggestion was implemented or
+# declined, so it must not assert that a change was made.
+DEFAULT_RECHECK='@coderabbitai please take another look at this thread and resolve it if the point is settled.'
 
 if [ $# -lt 2 ]; then
   echo "usage: reply-to-thread.sh <thread_id> <body> [--resolve] [--ask-recheck[=TEXT]] [--clear-eyes]" >&2
@@ -80,7 +82,7 @@ MSG
 fi
 
 if [[ "$THREAD_AUTHOR" =~ $CODERABBIT_RE ]] && [ "$ASK_RECHECK" != true ]; then
-  echo "note: CodeRabbit thread replied to without --ask-recheck — it will not know to look again" >&2
+  echo "note: CodeRabbit thread replied to without --ask-recheck — it will not know to look again, and nobody else resolves its threads" >&2
 fi
 
 REPLY_QUERY='mutation($threadId: ID!, $body: String!) {

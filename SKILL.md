@@ -86,6 +86,17 @@ The ping is addressed to a bot, so it is **exempt from the reply-language rule**
 in English even when the thread is in German. The substantive reply still follows the
 thread's language.
 
+Ping on **every** CodeRabbit thread you reply to, whether you implemented the suggestion or
+declined it. Nobody else closes CodeRabbit's threads, so a decline with no ping sits open
+forever. This is why the default ping text is neutral — it must stay true for a thread
+where you changed nothing. If you write your own ping text with `--ask-recheck=...`, keep
+that property: never claim a fix you did not make.
+
+**The ping goes in the thread. Never post a top-level PR comment.** `@coderabbitai review`
+at PR level triggers a whole fresh review pass — slower, noisier, and untethered from the
+thread it was meant to answer. The per-thread ping already gives CodeRabbit the context it
+needs. There is no case in this workflow that calls for a PR-level command.
+
 `--resolve` on a CodeRabbit thread is refused by the script (exit 65). Do not reach for
 `--force-resolve` to get around it — if you think a CodeRabbit thread genuinely needs
 resolving by hand, that is a decision for the user at the Step 3 gate.
