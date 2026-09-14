@@ -73,40 +73,30 @@ pre-empts that and throws away the only independent confirmation that the change
 answers the comment. A thread left open is cheap; a thread closed over an unverified fix
 is how a real finding disappears.
 
-So for a CodeRabbit thread, post **two separate replies**:
+So a CodeRabbit thread gets **one ordinary reply and nothing else**. Do not `@`-mention the
+bot: a plain reply in its own thread already makes it re-check and post its verdict
+("Confirmed as addressed by ..."). An added ping only makes it analyse the same thread a
+second time, for the same answer.
 
-1. the substantive reply — a normal, human explanation of what was changed and what was not
-2. a short follow-up addressed to `@coderabbitai`, asking it to look again
-
-They stay separate on purpose. The first is an explanation, the second is a bot
-instruction, and merging them produces a reply that serves neither. `reply-to-thread.sh`
-does both in one call — pass `--ask-recheck` and it posts the ping as its own comment.
-
-**Write the substantive reply out properly, even here — especially here.** "Fixed as
+**Write that reply out properly, even here — especially here.** "Fixed as
 suggested." is enough for a human reviewer who can read the diff, but CodeRabbit is about
 to re-examine this thread and decide whether to resolve it. Tell it what actually changed,
 where, and what you deliberately left alone and why. A vague reply gets a vague re-check:
 the bot either re-raises a point you already answered, or resolves something you never
 addressed.
 
-Both replies follow the thread's language — see [Reply language](#reply-language). The ping
-is no exception: CodeRabbit's language is a deliberate project setting, and in this project
-it is German, so the ping is German too.
+The reply follows the thread's language — see [Reply language](#reply-language).
+CodeRabbit's language is a deliberate project setting, and in this project it is German, so
+a CodeRabbit thread gets a German reply.
 
-Ping on **every** CodeRabbit thread you reply to, whether you implemented the suggestion or
-declined it. Nobody else closes CodeRabbit's threads, so a decline with no ping sits open
-forever. This is why the default ping text is neutral — it must stay true for a thread
-where you changed nothing. Keep that property in any text you write yourself: never claim a
-fix you did not make.
+Reply on **every** CodeRabbit thread you acted on, whether you implemented the suggestion or
+declined it. Nobody else closes CodeRabbit's threads, so one you never answer sits open
+forever — and a decline needs the reasoning on record just as much as a fix does.
 
-**Always pass the ping text explicitly** — `--ask-recheck='<text>'` — in the thread's
-language. Bare `--ask-recheck` falls back to a built-in English default, which is wrong for
-a German thread; the script warns when you rely on it.
-
-**The ping goes in the thread. Never post a top-level PR comment.** `@coderabbitai review`
-at PR level triggers a whole fresh review pass — slower, noisier, and untethered from the
-thread it was meant to answer. The per-thread ping already gives CodeRabbit the context it
-needs. There is no case in this workflow that calls for a PR-level command.
+**Never post a top-level PR comment.** `@coderabbitai review` at PR level triggers a whole
+fresh review pass — slower, noisier, and untethered from the thread it was meant to answer.
+Replying in the thread already gives CodeRabbit everything it needs. No part of this
+workflow calls for a PR-level command.
 
 `--resolve` on a CodeRabbit thread is refused by the script (exit 65). Do not reach for
 `--force-resolve` to get around it — if you think a CodeRabbit thread genuinely needs
@@ -177,7 +167,7 @@ Verdict:  correct | trivial | wrong | out of scope | unclear — <the one-senten
 Action:   <what you changed — files/lines — or "no change">
 Reply:
   > <the reply body, verbatim, exactly as it would be posted>
-Resolve:  yes | no          Clear 👀: yes | no          Recheck ping: yes | no
+Resolve:  yes | no          Clear 👀: yes | no
 ```
 
 Rules for this report:
@@ -213,7 +203,7 @@ Only once the user has confirmed:
 2. Reply to each approved thread:
 
 ```bash
-bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>" [--resolve] [--ask-recheck] [--clear-eyes]
+bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>" [--resolve] [--clear-eyes]
 ```
 
 - **Send exactly the `<body>` shown in Step 3** — the approved text, not a re-worded version of it. If the user edited a reply, send their wording.
@@ -221,7 +211,7 @@ bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>
 - On a **CodeRabbit** thread, write the reply out: what changed, where, and what you left alone and why. It is the input to the bot's re-check, not just a courtesy.
 - If no change was applied, briefly explain why and keep the thread unresolved (omit `--resolve`) so the reviewer can reply if they disagree.
 - Pass `--resolve` only where Step 3 said `Resolve: yes`, and `--clear-eyes` only where it said `Clear 👀: yes`.
-- On a CodeRabbit thread (`isCodeRabbit: true`): pass `--ask-recheck='<text in the thread's language>'`, never `--resolve`. Leave the thread open for CodeRabbit to verify and close.
+- On a CodeRabbit thread (`isCodeRabbit: true`): reply and stop — never `--resolve`, and never `@`-mention the bot. Leave the thread open for CodeRabbit to verify and close.
 
 Replies and resolutions are posted **as the user's own GitHub account**, not as a bot.
 Write them in a voice the user would be comfortable having attributed to them.
@@ -239,8 +229,7 @@ Pick the language from, in order of priority:
 
 Point 3 includes CodeRabbit's own opening comment. Do not treat a bot's language as an
 accident to be corrected: it is configured per project, and in this project CodeRabbit is
-set to **German**. A German CodeRabbit thread gets German replies, including the
-`@coderabbitai` ping.
+set to **German**. A German CodeRabbit thread gets German replies.
 
 The one thing point 1 and 2 are there to prevent is a mixed thread flipping language
 mid-way: if the humans in the thread are writing in another language than it opened in,

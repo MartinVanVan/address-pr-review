@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
-# Replies to a PR review thread, optionally resolving it, pinging CodeRabbit for a
-# re-check, and/or clearing the 👀 flag.
+# Replies to a PR review thread, optionally resolving it and/or clearing the 👀 flag.
 #
-# Usage: reply-to-thread.sh <thread_id> <body> [--resolve] [--ask-recheck[=TEXT]] [--clear-eyes]
+# Usage: reply-to-thread.sh <thread_id> <body> [--resolve] [--clear-eyes]
 #
-#   --resolve            mark the thread as resolved. REFUSED on CodeRabbit threads —
-#                        see below. Use --force-resolve to override.
-#   --ask-recheck[=TEXT] post a SECOND, separate reply addressed to @coderabbitai asking
-#                        it to look again. Kept separate from <body> on purpose: the first
-#                        reply is for the human reader, this one is a bot instruction.
-#                        PASS TEXT in the thread's language. CodeRabbit's language is a
-#                        per-project setting, so the built-in default (English) is only a
-#                        fallback and is wrong wherever the bot is configured otherwise.
-#   --clear-eyes         remove YOUR 👀 (EYES) reactions from the thread's comments, so the
-#                        re-check flag is consumed and the thread is not picked up again by
-#                        the next run of get-unresolved-threads.sh
-#   --force-resolve      allow --resolve on a CodeRabbit thread anyway
+#   --resolve        mark the thread as resolved. REFUSED on CodeRabbit threads — see
+#                    below. Use --force-resolve to override.
+#   --clear-eyes     remove YOUR 👀 (EYES) reactions from the thread's comments, so the
+#                    re-check flag is consumed and the thread is not picked up again by
+#                    the next run of get-unresolved-threads.sh
+#   --force-resolve  allow --resolve on a CodeRabbit thread anyway
+#
+# CodeRabbit needs no @-mention: a plain reply in its thread is enough to make it re-check
+# and post its verdict ("Confirmed as addressed by ..."). Adding a ping on top only makes it
+# analyse the same thread twice.
 #
 # Why CodeRabbit threads are not resolved here: CodeRabbit resolves its own threads once it
 # has verified the fix (observed on every venabo PR checked — resolvedBy is
@@ -26,13 +23,8 @@ set -euo pipefail
 # CodeRabbit appears as "coderabbitai" in author.login and "coderabbitai[bot]" in
 # resolvedBy.login — match both.
 CODERABBIT_RE='^coderabbitai(\[bot\])?$'
-# Deliberately neutral: this same ping is sent whether the suggestion was implemented or
-# declined, so it must not assert that a change was made. English only as a fallback —
-# callers should pass --ask-recheck=TEXT in the thread's language.
-DEFAULT_RECHECK='@coderabbitai please take another look at this thread and resolve it if the point is settled.'
-
 if [ $# -lt 2 ]; then
-  echo "usage: reply-to-thread.sh <thread_id> <body> [--resolve] [--ask-recheck[=TEXT]] [--clear-eyes]" >&2
+  echo "usage: reply-to-thread.sh <thread_id> <body> [--resolve] [--clear-eyes]" >&2
   exit 64
 fi
 
@@ -43,16 +35,11 @@ shift 2
 RESOLVE=false
 FORCE_RESOLVE=false
 CLEAR_EYES=false
-ASK_RECHECK=false
-RECHECK_DEFAULTED=false
-RECHECK_TEXT="$DEFAULT_RECHECK"
 for ARG in "$@"; do
   case "$ARG" in
     --resolve)        RESOLVE=true ;;
     --force-resolve)  RESOLVE=true; FORCE_RESOLVE=true ;;
     --clear-eyes)     CLEAR_EYES=true ;;
-    --ask-recheck)    ASK_RECHECK=true; RECHECK_DEFAULTED=true ;;
-    --ask-recheck=*)  ASK_RECHECK=true; RECHECK_TEXT="${ARG#--ask-recheck=}" ;;
     *) echo "unknown option: $ARG" >&2; exit 64 ;;
   esac
 done
@@ -81,13 +68,9 @@ if [ "$RESOLVE" = true ] && [[ "$THREAD_AUTHOR" =~ $CODERABBIT_RE ]] && [ "$FORC
   cat >&2 <<MSG
 refusing to resolve a CodeRabbit thread ($THREAD_AUTHOR).
 CodeRabbit resolves its own threads once it has verified the fix; resolving it here
-discards that check. Reply with --ask-recheck instead, or pass --force-resolve.
+discards that check. Just reply and leave it open, or pass --force-resolve.
 MSG
   exit 65
-fi
-
-if [[ "$THREAD_AUTHOR" =~ $CODERABBIT_RE ]] && [ "$ASK_RECHECK" != true ]; then
-  echo "note: CodeRabbit thread replied to without --ask-recheck — it will not know to look again, and nobody else resolves its threads" >&2
 fi
 
 REPLY_QUERY='mutation($threadId: ID!, $body: String!) {
@@ -98,14 +81,6 @@ REPLY_QUERY='mutation($threadId: ID!, $body: String!) {
 
 gh api graphql -f query="$REPLY_QUERY" -f threadId="$THREAD_ID" -f body="$BODY" \
   --jq '.data.addPullRequestReviewThreadReply.comment.url'
-
-if [ "$ASK_RECHECK" = true ]; then
-  if [ "$RECHECK_DEFAULTED" = true ]; then
-    echo "note: using the built-in English ping — pass --ask-recheck=TEXT in the thread's language" >&2
-  fi
-  gh api graphql -f query="$REPLY_QUERY" -f threadId="$THREAD_ID" -f body="$RECHECK_TEXT" \
-    --jq '"recheck ping: " + .data.addPullRequestReviewThreadReply.comment.url'
-fi
 
 if [ "$RESOLVE" = true ]; then
   RESOLVE_QUERY='mutation($threadId: ID!) {

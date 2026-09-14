@@ -122,34 +122,30 @@ checked, its threads carry `resolvedBy: coderabbitai[bot]`. So the skill does no
 them. Closing one ourselves pre-empts that verification and discards the only independent
 confirmation that the change actually answers the comment.
 
-Instead a CodeRabbit thread gets two separate replies: a normal, written-out explanation of
-what changed and what did not, and a short follow-up addressed to `@coderabbitai` asking it
-to look again. The thread stays open until CodeRabbit itself closes it.
+Instead a CodeRabbit thread gets one ordinary reply: a written-out explanation of what
+changed and what did not. **No `@`-mention.** A plain reply in its own thread is already
+enough for CodeRabbit to re-check and post its verdict ("Confirmed as addressed by ..."); a
+ping on top only makes it analyse the same thread a second time for the same answer. The
+thread stays open until CodeRabbit itself closes it.
 
 The explanation matters more here than on a human thread. "Fixed as suggested." is fine for
 a reviewer who can read the diff; CodeRabbit is about to decide whether to resolve the
 thread, and a vague reply gets a vague re-check — it re-raises a point you answered, or
 resolves one you never did.
 
-Both replies go out in the thread's language, the ping included. CodeRabbit's language is a
-per-project setting rather than an accident, so a German thread gets German replies:
+The reply goes out in the thread's language. CodeRabbit's language is a per-project setting
+rather than an accident, so a German thread gets a German reply:
 
 ```bash
 bash ./reply-to-thread.sh "<thread_id>" \
-  "Behoben in src/Foo.php:42 — die Null-Prüfung entfernt. Punkt zwei bleibt, weil ..." \
-  --ask-recheck='@coderabbitai Bitte schau dir den Thread noch einmal an und löse ihn auf, wenn der Punkt erledigt ist.'
+  "Behoben in src/Foo.php:42 — die Null-Prüfung entfernt. Punkt zwei bleibt, weil ..."
 ```
 
-Bare `--ask-recheck` falls back to a built-in English ping and warns that it did.
+Every CodeRabbit thread you acted on gets a reply, declines included — nothing else closes
+them, and the reasoning behind a decline belongs on record as much as a fix does.
 
-Every CodeRabbit thread gets the ping, including ones where the suggestion was declined —
-nothing else closes them, so a decline with no ping stays open indefinitely. The default
-ping text is neutral for that reason: it is sent whether or not a change was made, so it
-never claims a fix.
-
-The ping always goes in the thread. The skill never posts a top-level PR comment: a
-PR-level `@coderabbitai review` would trigger a full fresh pass, detached from the thread
-it was meant to answer.
+The skill never posts a top-level PR comment either: a PR-level `@coderabbitai review`
+would trigger a full fresh pass, detached from the thread it was meant to answer.
 
 `--resolve` on a CodeRabbit thread is refused (exit 65); `--force-resolve` overrides it if
 you really mean to. Human threads are unaffected and resolve as before.
@@ -191,6 +187,7 @@ Resolved threads stay out of scope regardless — 👀 re-opens a skipped thread
 | Push & reply | Automatic, at the end of the run | Requires explicit confirmation in chat |
 | Thread selection | All unresolved threads | Unresolved threads you have **not** commented in |
 | Re-check signal | — | 👀 reaction re-opens a skipped thread, consumed via `--clear-eyes` |
+| CodeRabbit threads | Resolved like any other | Replied to, never resolved — CodeRabbit closes its own |
 | Reply language | Unspecified | Matches the thread's language |
 | `context: fork` | Enabled | Removed — a forked run can't stop to ask you mid-flight |
 | Pre-approved tools | All helper scripts | Only the two read-only ones; `reply-to-thread.sh` still prompts |
