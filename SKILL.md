@@ -135,6 +135,17 @@ breaks, no case that misbehaves — is a suggestion to decline.
    in a sentence a reviewer would accept, you do not understand the issue well enough to
    act on it. Go back to step 2 or mark it Unclear.
 
+### Use review skills to reach the verdict
+
+Back each verdict with `/ponytail:ponytail-review` rather than your own reading alone.
+Run it via the Skill tool on the code the thread points at. It checks logic, safety, load,
+tests, and whether each line is needed.
+
+A finding from the review is evidence for the verdict, not a verdict itself — the rules
+above still apply. Findings outside the reviewed threads are **out of scope**: list them
+for the user in Step 3, do not fix them. If the skill is not installed, say so and judge
+by hand.
+
 `Correct but trivial`, `Wrong` and `Out of scope` are ordinary, expected outcomes. A run
 that declines several threads is working correctly. Do not treat "declined nothing" as a
 sign of a good run.
@@ -183,6 +194,7 @@ Rules for this report:
 - Mark 👀 re-checks and say what you concluded on the second look.
 - If a thread needs no reply at all, still list it and say so explicitly.
 - Draft each reply in the thread's own language (see [Reply language](#reply-language)), so what you show is what gets posted.
+- Draft each reply in [Reply style](#reply-style): short, caveman, only the needed facts.
 
 Then list the CI failures you fixed, and the commits you would push with their target branch:
 
@@ -215,6 +227,19 @@ bash ~/.claude/skills/address-pr-review/reply-to-thread.sh "<thread_id>" "<body>
 
 Replies and resolutions are posted **as the user's own GitHub account**, not as a bot.
 Write them in a voice the user would be comfortable having attributed to them.
+
+## Reply style
+
+Keep every reply short. Write in caveman style: drop filler, pleasantries, hedging and
+recap; keep only the information the reader needs.
+
+- Human thread: what changed, or why not. One line is usually enough.
+- CodeRabbit thread: still state what changed, where, and what was left alone and why —
+  in terse form. Short does not mean vague.
+- Never drop a negation, a path, an identifier or a number to save words.
+- The thread's language still applies (see [Reply language](#reply-language)).
+
+Example: `Fixed: null-check in parseDate (src/date.ts:42). Timezone handling unchanged, out of scope.`
 
 ## Reply language
 
